@@ -127,7 +127,7 @@ function load(){
 function exportPayload(){
  return {
   app:"風量調整アシスト",
-  version:"1.5",
+  version:"1.6",
   savedAt:new Date().toISOString(),
   state:state
  };
@@ -139,19 +139,47 @@ function exportFilename(){
 }
 async function saveFile(){
  const text=JSON.stringify(exportPayload(),null,2);
- const file=new File([text],exportFilename(),{type:"application/json"});
- try{
-  if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
-   await navigator.share({files:[file],title:"風量調整アシスト 保存データ"});
-   return;
+ const filename=exportFilename();
+ const file=new File([text],filename,{type:"application/json"});
+
+ if(window.showSaveFilePicker){
+  try{
+   const handle=await window.showSaveFilePicker({
+    suggestedName:filename,
+    types:[{description:"風量調整アシスト保存データ",accept:{"application/json":[".json"]}}]
+   });
+   const writable=await handle.createWritable();
+   await writable.write(text);
+   await writable.close();
+   return true;
+  }catch(e){
+   if(e?.name==="AbortError") return false;
   }
- }catch(e){
-  if(e?.name==="AbortError") return;
  }
+
+ if(navigator.share){
+  try{
+   const shareData={files:[file],title:"風量調整アシスト 保存データ"};
+   if(!navigator.canShare || navigator.canShare(shareData)){
+    await navigator.share(shareData);
+    return true;
+   }
+  }catch(e){
+   if(e?.name==="AbortError") return false;
+   console.error("Share failed:",e);
+  }
+ }
+
  const url=URL.createObjectURL(file);
  const a=document.createElement("a");
- a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();
- setTimeout(()=>URL.revokeObjectURL(url),1000);
+ a.href=url;
+ a.download=filename;
+ a.style.display="none";
+ document.body.appendChild(a);
+ a.click();
+ a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
+ return true;
 }
 async function importFile(file){
  if(!file) return;
@@ -194,9 +222,13 @@ function bind(){
    btn.textContent="保存しました";
    setTimeout(()=>btn.textContent=old,1200);
  };
- $("#saveFileBtn").onclick=async()=>{
-   save();
-   const btn=$("#saveFileBtn");
+ $("#saveFileBtn").onclick=()=>{
+   $("#savePanel").classList.add("hidden");
+   $("#fileSaveGuide").classList.remove("hidden");
+ };
+ $("#cancelFileSaveBtn").onclick=()=>$("#fileSaveGuide").classList.add("hidden");
+ $("#openFileSaveBtn").onclick=async()=>{
+   const btn=$("#openFileSaveBtn");
    const old=btn.textContent;
    btn.textContent="保存画面を開いています…";
    btn.disabled=true;
@@ -205,7 +237,7 @@ function bind(){
    } finally {
      btn.disabled=false;
      btn.textContent=old;
-     $("#savePanel").classList.add("hidden");
+     $("#fileSaveGuide").classList.add("hidden");
    }
  };
  $("#closeSave").onclick=()=>$("#savePanel").classList.add("hidden");

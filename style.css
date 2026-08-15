@@ -121,3 +121,7 @@
   .save-panel-actions{display:grid;grid-template-columns:1fr}
   .save-panel-actions button{width:100%;min-width:0}
 }
+
+.save-guide-main{line-height:1.7}
+.save-guide-steps{padding-left:1.4em;line-height:1.8;margin:12px 0}
+.save-guide-main strong{color:#075bd8}

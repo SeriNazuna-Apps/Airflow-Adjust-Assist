@@ -1,5 +1,5 @@
-const CACHE='airflow-v1.5';
-const ASSETS=['./','index.html','style.css','app.js','manifest.webmanifest'];
+const CACHE='airflow-v1.6';
+const ASSETS=['./','index.html','style.css?v=1.6','app.js?v=1.6','manifest.webmanifest'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
