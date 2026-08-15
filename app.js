@@ -120,5 +120,21 @@ function miniCalc(last){
  if(last!=="velocity" && a!=null&&q!=null&&a!==0){$("#velocity").value=fmt(q/(a*3600),3);return}
  if(last!=="area" && v!=null&&q!=null&&v!==0){$("#area").value=fmt(q/(v*3600),4);return}
 }
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
+      await reg.update();
+
+      let reloading = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (reloading) return;
+        reloading = true;
+        window.location.reload();
+      });
+    } catch (e) {
+      console.error("Service Worker update failed:", e);
+    }
+  });
+}
 init();
