@@ -94,14 +94,109 @@ function updateAdjust(){
 function move(i,d){const j=i+d;if(j<0||j>=state.vents.length)return;[state.vents[i],state.vents[j]]=[state.vents[j],state.vents[i]];state.calculated=false;render();}
 function addVent(){if(state.vents.length>=MAX)return alert("最大20台です。");const used=state.vents.map(v=>v.no);let no=1;while(used.includes(no))no++;state.vents.push(newVent(no));state.calculated=false;render();}
 function deleteVent(i){if(state.vents.length<=1)return alert("制気口は最低1台必要です。");const no=state.vents[i].no;if(!confirm(`制気口${no}を削除しますか？`))return;state.vents.splice(i,1);state.currentIndex=Math.min(state.currentIndex,state.vents.length-1);state.calculated=false;render();save();}
-function reset(){if(confirm("入力内容をすべてリセットしますか？")){localStorage.removeItem("airflowAssist_v11");state={vents:[1,2].map(newVent),currentIndex:0,calculated:false};render();}}
-function save(){localStorage.setItem("airflowAssist_v11",JSON.stringify(state));}
-function load(){try{const s=JSON.parse(localStorage.getItem("airflowAssist_v11"));if(s?.vents?.length){state=s;return true}}catch(e){}return false}
+function allReset(){
+ if(confirm("目標風量・初回全開風量・調整途中の値など、すべての入力内容をリセットしますか？")){
+  localStorage.removeItem("airflowAssist_v11");
+  state={vents:[1,2].map(newVent),currentIndex:0,calculated:false};
+  render();
+ }
+}
+function initialReset(){
+ if(!confirm("目標風量と制気口の並び順を残して、初回全開風量と計算結果をクリアしますか？")) return;
+ state.vents.forEach(v=>{
+  v.initial="";
+  v.xi=null;
+  v.factor=null;
+  v.before="";
+ });
+ state.calculated=false;
+ state.currentIndex=0;
+ render();
+ save();
+}
+function save(){
+ localStorage.setItem("airflowAssist_v11",JSON.stringify(state));
+}
+function load(){
+ try{
+  const s=JSON.parse(localStorage.getItem("airflowAssist_v11"));
+  if(s?.vents?.length){state=s;return true}
+ }catch(e){}
+ return false
+}
+function exportPayload(){
+ return {
+  app:"風量調整アシスト",
+  version:"1.4",
+  savedAt:new Date().toISOString(),
+  state:state
+ };
+}
+function exportFilename(){
+ const d=new Date();
+ const pad=v=>String(v).padStart(2,"0");
+ return `風量調整_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+}
+async function saveFile(){
+ const text=JSON.stringify(exportPayload(),null,2);
+ const file=new File([text],exportFilename(),{type:"application/json"});
+ try{
+  if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+   await navigator.share({files:[file],title:"風量調整アシスト 保存データ"});
+   return;
+  }
+ }catch(e){
+  if(e?.name==="AbortError") return;
+ }
+ const url=URL.createObjectURL(file);
+ const a=document.createElement("a");
+ a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function importFile(file){
+ if(!file) return;
+ try{
+  const text=await file.text();
+  const obj=JSON.parse(text);
+  const imported=obj?.state || obj;
+  if(!Array.isArray(imported?.vents) || imported.vents.length<1 || imported.vents.length>MAX){
+   throw new Error("形式が正しくありません");
+  }
+  state=imported;
+  state.currentIndex=Number.isInteger(state.currentIndex)?Math.max(0,Math.min(state.currentIndex,state.vents.length-1)):0;
+  state.calculated=!!state.calculated;
+  save();
+  render();
+  alert("保存データを読み込みました。");
+ }catch(e){
+  alert("このファイルは読み込めません。風量調整アシストで保存したJSONファイルを選択してください。");
+ }
+}
 
 function bind(){
  tbody.addEventListener("input",e=>{const i=+e.target.dataset.i;if(e.target.classList.contains("target"))state.vents[i].target=e.target.value;if(e.target.classList.contains("initial"))state.vents[i].initial=e.target.value;state.calculated=false;updateTotals();});
  tbody.addEventListener("click",e=>{if(e.target.dataset.up!=null)move(+e.target.dataset.up,-1);if(e.target.dataset.down!=null)move(+e.target.dataset.down,1);if(e.target.dataset.delete!=null)deleteVent(+e.target.dataset.delete)});
- $("#addBtn").onclick=addVent;$("#calcBtn").onclick=calculate;$("#resetBtn").onclick=reset;$("#saveBtn").onclick=()=>{save();alert("この端末に保存しました。")};
+ $("#addBtn").onclick=addVent;
+ $("#calcBtn").onclick=calculate;
+ $("#allResetBtn").onclick=allReset;
+ $("#initialResetBtn").onclick=initialReset;
+ $("#saveBtn").onclick=()=>$("#saveModal").classList.remove("hidden");
+ $("#loadBtn").onclick=()=>$("#loadFileInput").click();
+ $("#loadFileInput").addEventListener("change",async e=>{
+   await importFile(e.target.files?.[0]);
+   e.target.value="";
+ });
+ $("#saveLocalBtn").onclick=()=>{
+   save();
+   $("#saveModal").classList.add("hidden");
+   alert("この端末に保存しました。");
+ };
+ $("#saveFileBtn").onclick=async()=>{
+   save();
+   await saveFile();
+   $("#saveModal").classList.add("hidden");
+ };
+ $("#closeSave").onclick=()=>$("#saveModal").classList.add("hidden");
  $("#beforeInput").addEventListener("input",e=>{state.vents[state.currentIndex].before=e.target.value;updateAdjust();save()});
  $("#prevBtn").onclick=()=>{const i=Number($("#prevBtn").dataset.go);if(i>=0){state.currentIndex=i;updateAdjust();save()}};
  $("#nextBtn").onclick=()=>{const i=Number($("#nextBtn").dataset.go);if(i>=0){state.currentIndex=i;const v=state.vents[i];if(v.before==="")v.before=v.initial;updateAdjust();save()}};

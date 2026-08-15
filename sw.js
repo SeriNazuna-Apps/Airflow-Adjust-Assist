@@ -1,4 +1,4 @@
-const CACHE='airflow-v1.3';
+const CACHE='airflow-v1.4';
 const ASSETS=['./','index.html','style.css','app.js','manifest.webmanifest'];
 
 self.addEventListener('install', event => {
@@ -22,7 +22,6 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const req = event.request;
-
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
@@ -31,13 +30,10 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE).then(cache => cache.put(req, copy));
           return resp;
         })
-        .catch(() =>
-          caches.match(req).then(r => r || caches.match('./') || caches.match('index.html'))
-        )
+        .catch(() => caches.match(req).then(r => r || caches.match('./') || caches.match('index.html')))
     );
     return;
   }
-
   event.respondWith(
     caches.match(req).then(cached => {
       const network = fetch(req).then(resp => {

@@ -11,11 +11,13 @@
 <body>
 <div class="app">
 <header>
-  <div class="title">風量調整アシスト <span>ver 1.3</span></div>
+  <div class="title">風量調整アシスト <span>ver 1.4</span></div>
   <div class="header-actions">
     <button class="outline" id="helpBtn">？ 使い方</button>
-    <button class="outline" id="resetBtn">リセット ↻</button>
     <button class="outline" id="saveBtn">保存</button>
+    <button class="outline" id="loadBtn">読込</button>
+    <button class="outline danger-lite" id="initialResetBtn">初回風量クリア</button>
+    <button class="outline danger-lite" id="allResetBtn">全リセット</button>
   </div>
 </header>
 
@@ -132,11 +134,28 @@
       <li>「自動計算」で Xi と調整係数を算出します。</li>
       <li>調整中は、その制気口を触る直前の風量だけを入力します。調整係数は一覧から自動引用され、目標風量が自動表示されます。</li>
       <li>基準口は調整せず、最後に基準口を測りながら主ダンパーで目標風量へ合わせます。</li>
+      <li>「保存」では端末内保存またはJSONファイル保存を選べます。JSONファイルはOneDrive、iCloud Drive等へ保存できます。</li>
+      <li>「読込」で保存したJSONファイルを選択すると、入力内容・並び順・調整途中の値を復元できます。</li>
+      <li>「初回風量クリア」は目標風量と並び順を残し、初回全開風量・Xi・調整係数・調整直前風量だけを消去します。</li>
     </ol>
     <button class="calc" id="closeHelp">閉じる</button>
   </div>
 </div>
 
+<input type="file" id="loadFileInput" accept=".json,application/json" hidden>
 <script src="app.js"></script>
+
+<div class="modal hidden" id="saveModal">
+  <div class="modal-box action-modal">
+    <h2>保存方法</h2>
+    <p>端末内保存は次回起動時に自動で復元されます。ファイル保存はOneDrive・iCloud Drive等へ保存できます。</p>
+    <div class="modal-actions">
+      <button class="calc" id="saveLocalBtn">端末内に保存</button>
+      <button class="calc" id="saveFileBtn">ファイルとして保存</button>
+      <button class="outline" id="closeSave">キャンセル</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
