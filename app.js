@@ -127,7 +127,7 @@ function load(){
 function exportPayload(){
  return {
   app:"風量調整アシスト",
-  version:"1.4",
+  version:"1.5",
   savedAt:new Date().toISOString(),
   state:state
  };
@@ -180,7 +180,7 @@ function bind(){
  $("#calcBtn").onclick=calculate;
  $("#allResetBtn").onclick=allReset;
  $("#initialResetBtn").onclick=initialReset;
- $("#saveBtn").onclick=()=>$("#saveModal").classList.remove("hidden");
+ $("#saveBtn").onclick=()=>$("#savePanel").classList.toggle("hidden");
  $("#loadBtn").onclick=()=>$("#loadFileInput").click();
  $("#loadFileInput").addEventListener("change",async e=>{
    await importFile(e.target.files?.[0]);
@@ -188,15 +188,27 @@ function bind(){
  });
  $("#saveLocalBtn").onclick=()=>{
    save();
-   $("#saveModal").classList.add("hidden");
-   alert("この端末に保存しました。");
+   $("#savePanel").classList.add("hidden");
+   const btn=$("#saveLocalBtn");
+   const old=btn.textContent;
+   btn.textContent="保存しました";
+   setTimeout(()=>btn.textContent=old,1200);
  };
  $("#saveFileBtn").onclick=async()=>{
    save();
-   await saveFile();
-   $("#saveModal").classList.add("hidden");
+   const btn=$("#saveFileBtn");
+   const old=btn.textContent;
+   btn.textContent="保存画面を開いています…";
+   btn.disabled=true;
+   try{
+     await saveFile();
+   } finally {
+     btn.disabled=false;
+     btn.textContent=old;
+     $("#savePanel").classList.add("hidden");
+   }
  };
- $("#closeSave").onclick=()=>$("#saveModal").classList.add("hidden");
+ $("#closeSave").onclick=()=>$("#savePanel").classList.add("hidden");
  $("#beforeInput").addEventListener("input",e=>{state.vents[state.currentIndex].before=e.target.value;updateAdjust();save()});
  $("#prevBtn").onclick=()=>{const i=Number($("#prevBtn").dataset.go);if(i>=0){state.currentIndex=i;updateAdjust();save()}};
  $("#nextBtn").onclick=()=>{const i=Number($("#nextBtn").dataset.go);if(i>=0){state.currentIndex=i;const v=state.vents[i];if(v.before==="")v.before=v.initial;updateAdjust();save()}};

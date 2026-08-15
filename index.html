@@ -11,7 +11,7 @@
 <body>
 <div class="app">
 <header>
-  <div class="title">風量調整アシスト <span>ver 1.4</span></div>
+  <div class="title">風量調整アシスト <span>ver 1.5</span></div>
   <div class="header-actions">
     <button class="outline" id="helpBtn">？ 使い方</button>
     <button class="outline" id="saveBtn">保存</button>
@@ -20,6 +20,16 @@
     <button class="outline danger-lite" id="allResetBtn">全リセット</button>
   </div>
 </header>
+<div class="save-panel hidden" id="savePanel">
+  <div class="save-panel-title">保存方法を選択してください</div>
+  <div class="save-panel-actions">
+    <button class="calc" id="saveLocalBtn">端末内に保存</button>
+    <button class="calc" id="saveFileBtn">ファイルとして保存</button>
+    <button class="outline" id="closeSave">閉じる</button>
+  </div>
+  <div class="save-panel-note">※通常の入力内容は端末内にも自動保存されます。ファイル保存ではOneDrive・iCloud Drive等へ保存できます。</div>
+</div>
+
 
 <section class="notice">
   <h2>💡 入力のお願い</h2>
@@ -145,17 +155,7 @@
 <input type="file" id="loadFileInput" accept=".json,application/json" hidden>
 <script src="app.js"></script>
 
-<div class="modal hidden" id="saveModal">
-  <div class="modal-box action-modal">
-    <h2>保存方法</h2>
-    <p>端末内保存は次回起動時に自動で復元されます。ファイル保存はOneDrive・iCloud Drive等へ保存できます。</p>
-    <div class="modal-actions">
-      <button class="calc" id="saveLocalBtn">端末内に保存</button>
-      <button class="calc" id="saveFileBtn">ファイルとして保存</button>
-      <button class="outline" id="closeSave">キャンセル</button>
-    </div>
-  </div>
-</div>
+
 
 </body>
 </html>
