@@ -81,7 +81,12 @@ function updateAdjust(){
  const bv=state.vents[b];
  $("#baseNo").textContent=bv?.no??"—"; $("#baseTarget").textContent=fmt(n(bv?.target),0);
  $("#finalText").innerHTML=bv?`基準口（${bv.no}番）の風量を測定しながら、主ダンパーを調整して <b>${fmt(n(bv.target),0)} m³/h</b> に合わせてください。`:"自動計算後に表示します。";
- const prev=state.currentIndex>0?state.vents[state.currentIndex-1]:null, next=state.currentIndex<state.vents.length-1?state.vents[state.currentIndex+1]:null;
+ const activeIndexes=state.vents.map((x,i)=>Number.isFinite(x.factor)?i:-1).filter(i=>i>=0);
+ const pos=activeIndexes.indexOf(state.currentIndex);
+ const prevIndex=pos>0?activeIndexes[pos-1]:-1;
+ const nextIndex=(pos>=0 && pos<activeIndexes.length-1)?activeIndexes[pos+1]:-1;
+ const prev=prevIndex>=0?state.vents[prevIndex]:null, next=nextIndex>=0?state.vents[nextIndex]:null;
+ $("#prevBtn").dataset.go=prevIndex; $("#nextBtn").dataset.go=nextIndex;
  $("#prevBtn").disabled=!prev;$("#nextBtn").disabled=!next;
  $("#prevText").textContent=prev?`（${prev.no}番へ戻る）`:"";
  $("#nextText").textContent=next?`（${next.no}番へ進む）`:"";
@@ -98,8 +103,8 @@ function bind(){
  tbody.addEventListener("click",e=>{if(e.target.dataset.up!=null)move(+e.target.dataset.up,-1);if(e.target.dataset.down!=null)move(+e.target.dataset.down,1);if(e.target.dataset.delete!=null)deleteVent(+e.target.dataset.delete)});
  $("#addBtn").onclick=addVent;$("#calcBtn").onclick=calculate;$("#resetBtn").onclick=reset;$("#saveBtn").onclick=()=>{save();alert("この端末に保存しました。")};
  $("#beforeInput").addEventListener("input",e=>{state.vents[state.currentIndex].before=e.target.value;updateAdjust();save()});
- $("#prevBtn").onclick=()=>{if(state.currentIndex>0){state.currentIndex--;updateAdjust();save()}};
- $("#nextBtn").onclick=()=>{if(state.currentIndex<state.vents.length-1){state.currentIndex++;const v=state.vents[state.currentIndex];if(v.before==="")v.before=v.initial;updateAdjust();save()}};
+ $("#prevBtn").onclick=()=>{const i=Number($("#prevBtn").dataset.go);if(i>=0){state.currentIndex=i;updateAdjust();save()}};
+ $("#nextBtn").onclick=()=>{const i=Number($("#nextBtn").dataset.go);if(i>=0){state.currentIndex=i;const v=state.vents[i];if(v.before==="")v.before=v.initial;updateAdjust();save()}};
  $("#helpBtn").onclick=()=>$("#helpModal").classList.remove("hidden");$("#closeHelp").onclick=()=>$("#helpModal").classList.add("hidden");
  setupMiniCalc();
 }
