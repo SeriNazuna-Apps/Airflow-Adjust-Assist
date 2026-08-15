@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>風量調整アシスト</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="title">風量調整アシスト <span>ver 1.0</span></div>
+  <div class="header-actions">
+    <button class="outline" id="helpBtn">？ 使い方</button>
+    <button class="outline" id="resetBtn">リセット ↻</button>
+    <button class="outline" id="saveBtn">保存</button>
+  </div>
+</header>
+
+<section class="notice">
+  <h2>💡 入力のお願い</h2>
+  <p>制気口は<strong>再遠側（最も遠い側）から順番に並べてください。</strong></p>
+</section>
+
+<div class="add-wrap">
+  <button class="add" id="addBtn">＋ 制気口を追加</button>
+  <div>最大20台まで追加できます</div>
+</div>
+
+<section class="card">
+  <h2 class="blue">制気口一覧 <span>（最大20台）</span></h2>
+  <p class="hint">※行の上下ボタンで順番（再遠側→主送風側）を変更できます</p>
+  <div class="table-wrap">
+    <table id="ventTable">
+      <thead>
+        <tr>
+          <th class="opcol">操作<br><small>（並べ替え）</small></th>
+          <th class="nocol">制気口番号<br><small>（固定）</small></th>
+          <th>目標風量<br><small>（m³/h）</small></th>
+          <th>初回全開風量<br><small>（全開時）（m³/h）</small></th>
+          <th>Xi（Xi）<br><small>＝ 初回全開風量 ÷ 目標風量</small></th>
+          <th>調整係数<br><small>（Xm / Xi）</small></th>
+          <th class="delcol">削除</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <p class="right-note">※目標風量はいつでも変更できます。入力後は「自動計算」を押してください。</p>
+</section>
+
+<section class="summary card">
+  <div><b>目標総風量（合計）</b><strong id="targetTotal">0</strong><span>m³/h</span></div>
+  <div><b>初回全開実測風量（合計）</b><strong id="measuredTotal">0</strong><span>m³/h</span></div>
+  <button class="calc" id="calcBtn">▣ 自動計算<small>（Xiと調整係数を計算）</small></button>
+</section>
+
+<section class="card adjust-card">
+  <h2 class="blue">調整中</h2>
+
+  <div class="mini-calc">
+    <div class="mini-title">簡易風量計算機　<span>2つの項目を入力すると、残り1つが自動計算されます。</span></div>
+    <div class="mini-grid">
+      <label>器具開口面積（m²）<input id="area" inputmode="decimal" placeholder="例）0.125"></label>
+      <b>×</b>
+      <label>風速（m/s）<input id="velocity" inputmode="decimal" placeholder="例）2.5"></label>
+      <b>＝</b>
+      <label>風量（m³/h）<input id="airflow" inputmode="decimal" placeholder="例）1,125"></label>
+    </div>
+    <div class="formula-note">※換算：風量（m³/h）＝ 開口面積（m²）× 風速（m/s）× 3,600</div>
+  </div>
+
+  <div class="adjust-main">
+    <div class="current">
+      <b>現在の調整対象</b>
+      <strong><span id="currentNo">—</span><small>番</small></strong>
+      <span id="currentInstruction">自動計算後に調整を開始できます</span>
+    </div>
+
+    <div class="target-calc">
+      <b>調整目標風量の計算</b>
+      <div class="equation">
+        <div class="display-value"><span id="beforeDisplay">—</span><small>調整直前風量<br>（m³/h）</small></div>
+        <b>×</b>
+        <div class="display-value green"><span id="factorDisplay">—</span><small>調整係数<br>（Xm / Xi）</small></div>
+        <b>＝</b>
+        <div class="display-value blue-value"><span id="adjustTarget">—</span><small>調整目標風量<br>（m³/h）</small></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="adjust-input-row">
+    <label class="before-input">調整直前の風量を入力してください
+      <small>（その制気口を調整する直前に測定した風量）</small>
+      <input id="beforeInput" inputmode="decimal">
+      <span>m³/h</span>
+    </label>
+    <div class="nav-buttons">
+      <button class="prev" id="prevBtn">← 前の制気口へ<br><small id="prevText"></small></button>
+      <button class="next" id="nextBtn">次の制気口へ →<br><small id="nextText"></small></button>
+    </div>
+  </div>
+</section>
+
+<section class="final card">
+  <h2>最終調整（主ダンパー調整）</h2>
+  <p>すべての制気口の調整が完了したら、基準口の風量を目標風量に合わせるように主ダンパーを調整してください。</p>
+  <div class="final-grid">
+    <div>基準口（調整不要の口）<strong><span id="baseNo">—</span><small>番</small></strong></div>
+    <div>基準口の目標風量<strong><span id="baseTarget">—</span><small>m³/h</small></strong></div>
+    <div id="finalText">自動計算後に表示します。</div>
+  </div>
+</section>
+
+<section class="memo">
+  <b>✎ メモ</b>
+  <span>途中で目標風量や初回全開実測風量を変更した場合は、必ず「自動計算」を押して調整係数を更新してください。</span>
+</section>
+
+<footer>
+本アプリは、北海道大学の論文「ダクト系の風量調整に基づく簡易調整法」（沢登龍彦・窪田英樹、1967年）に基づく簡易調整法を実装しています。
+</footer>
+</div>
+
+<div class="modal hidden" id="helpModal">
+  <div class="modal-box">
+    <h2>使い方</h2>
+    <ol>
+      <li>制気口を再遠側から順番に並べ、各口の目標風量と初回全開風量を入力します。</li>
+      <li>「自動計算」で Xi と調整係数を算出します。</li>
+      <li>調整中は、その制気口を触る直前の風量だけを入力します。調整係数は一覧から自動引用され、目標風量が自動表示されます。</li>
+      <li>基準口は調整せず、最後に基準口を測りながら主ダンパーで目標風量へ合わせます。</li>
+    </ol>
+    <button class="calc" id="closeHelp">閉じる</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
