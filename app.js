@@ -4,7 +4,13 @@ const $=s=>document.querySelector(s);
 const tbody=$("#ventTable tbody");
 
 function newVent(no){return {no,target:"",initial:"",xi:null,factor:null,before:""}}
-function init(){ if(!load()) state.vents=[1,2].map(newVent); render(); bind(); }
+function init(){
+ if(!load()) state.vents=[1,2].map(newVent);
+ render();
+ bind();
+ const stamp=localStorage.getItem("airflowAssist_lastSavedAt");
+ if(stamp) updateSaveStatus(`端末内保存：${stamp} に保存済み`);
+}
 function n(v){let x=parseFloat(String(v).replace(/,/g,""));return Number.isFinite(x)?x:null}
 function fmt(v,d=0){return Number.isFinite(v)?v.toLocaleString("ja-JP",{maximumFractionDigits:d,minimumFractionDigits:d}):"—"}
 
@@ -117,6 +123,18 @@ function initialReset(){
 function save(){
  localStorage.setItem("airflowAssist_v11",JSON.stringify(state));
 }
+function updateSaveStatus(text){
+ const el=$("#saveStatus");
+ if(el) el.textContent=text;
+}
+function saveLocalWithStatus(){
+ save();
+ const now=new Date();
+ const stamp=now.toLocaleString("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+ localStorage.setItem("airflowAssist_lastSavedAt",stamp);
+ updateSaveStatus(`端末内保存：${stamp} に保存済み`);
+}
+
 function load(){
  try{
   const s=JSON.parse(localStorage.getItem("airflowAssist_v11"));
@@ -127,7 +145,7 @@ function load(){
 function exportPayload(){
  return {
   app:"風量調整アシスト",
-  version:"1.6",
+  version:"1.7",
   savedAt:new Date().toISOString(),
   state:state
  };
@@ -142,44 +160,36 @@ async function saveFile(){
  const filename=exportFilename();
  const file=new File([text],filename,{type:"application/json"});
 
- if(window.showSaveFilePicker){
-  try{
-   const handle=await window.showSaveFilePicker({
-    suggestedName:filename,
-    types:[{description:"風量調整アシスト保存データ",accept:{"application/json":[".json"]}}]
-   });
-   const writable=await handle.createWritable();
-   await writable.write(text);
-   await writable.close();
-   return true;
-  }catch(e){
-   if(e?.name==="AbortError") return false;
-  }
- }
-
+ // iPhone/iPadでは、ユーザー操作から直接共有シートを開く。
  if(navigator.share){
   try{
    const shareData={files:[file],title:"風量調整アシスト 保存データ"};
    if(!navigator.canShare || navigator.canShare(shareData)){
     await navigator.share(shareData);
-    return true;
+    return {ok:true,method:"share"};
    }
   }catch(e){
-   if(e?.name==="AbortError") return false;
+   if(e?.name==="AbortError") return {ok:false,cancelled:true};
    console.error("Share failed:",e);
   }
  }
 
- const url=URL.createObjectURL(file);
- const a=document.createElement("a");
- a.href=url;
- a.download=filename;
- a.style.display="none";
- document.body.appendChild(a);
- a.click();
- a.remove();
- setTimeout(()=>URL.revokeObjectURL(url),1500);
- return true;
+ // 共有ファイル非対応時は通常ダウンロードにフォールバック。
+ try{
+  const url=URL.createObjectURL(file);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=filename;
+  a.style.display="none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  return {ok:true,method:"download"};
+ }catch(e){
+  console.error("Download failed:",e);
+  return {ok:false,error:true};
+ }
 }
 async function importFile(file){
  if(!file) return;
@@ -215,29 +225,32 @@ function bind(){
    e.target.value="";
  });
  $("#saveLocalBtn").onclick=()=>{
-   save();
-   $("#savePanel").classList.add("hidden");
+   saveLocalWithStatus();
    const btn=$("#saveLocalBtn");
    const old=btn.textContent;
    btn.textContent="保存しました";
    setTimeout(()=>btn.textContent=old,1200);
  };
- $("#saveFileBtn").onclick=()=>{
-   $("#savePanel").classList.add("hidden");
-   $("#fileSaveGuide").classList.remove("hidden");
- };
- $("#cancelFileSaveBtn").onclick=()=>$("#fileSaveGuide").classList.add("hidden");
- $("#openFileSaveBtn").onclick=async()=>{
-   const btn=$("#openFileSaveBtn");
+ $("#saveFileBtn").onclick=async()=>{
+   saveLocalWithStatus();
+   const btn=$("#saveFileBtn");
    const old=btn.textContent;
-   btn.textContent="保存画面を開いています…";
+   btn.textContent="共有画面を開いています…";
    btn.disabled=true;
    try{
-     await saveFile();
+     const result=await saveFile();
+     if(result?.method==="download"){
+       updateSaveStatus("ファイル保存：ダウンロードとして保存しました。iPhoneの「ファイル」→「ダウンロード」を確認してください。");
+     }else if(result?.method==="share"){
+       updateSaveStatus("ファイル保存：共有画面から保存先を選択しました。");
+     }else if(result?.cancelled){
+       updateSaveStatus("ファイル保存：キャンセルしました。");
+     }else{
+       updateSaveStatus("ファイル保存：保存画面を開けませんでした。");
+     }
    } finally {
      btn.disabled=false;
      btn.textContent=old;
-     $("#fileSaveGuide").classList.add("hidden");
    }
  };
  $("#closeSave").onclick=()=>$("#savePanel").classList.add("hidden");

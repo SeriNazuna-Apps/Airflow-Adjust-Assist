@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#ffffff">
 <title>風量調整アシスト</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="style.css?v=1.6">
+<link rel="stylesheet" href="style.css?v=1.7">
 </head>
 <body>
 <div class="app">
 <header>
-  <div class="title">風量調整アシスト <span>ver 1.6</span></div>
+  <div class="title">風量調整アシスト <span>ver 1.7</span></div>
   <div class="header-actions">
     <button class="outline" id="helpBtn">？ 使い方</button>
     <button class="outline" id="saveBtn">保存</button>
@@ -24,10 +24,14 @@
   <div class="save-panel-title">保存方法を選択してください</div>
   <div class="save-panel-actions">
     <button class="calc" id="saveLocalBtn">端末内に保存</button>
-    <button class="calc" id="saveFileBtn">OneDrive等へ保存</button>
+    <button class="calc" id="saveFileBtn">共有してファイル保存</button>
     <button class="outline" id="closeSave">閉じる</button>
   </div>
-  <div class="save-panel-note">※通常の入力内容は端末内にも自動保存されます。iPhoneでは「OneDrive等へ保存」→共有画面の「ファイルに保存」→保存先でOneDrive等を選択します。</div>
+  <div class="save-panel-note">
+      ※「端末内に保存」は、このアプリ専用の端末内領域に保存します。ファイルアプリには表示されません。<br>
+      ※「共有してファイル保存」はiPhoneの共有画面を直接開きます。そこで「ファイルに保存」を選び、OneDrive / iCloud Drive等を選択してください。
+    </div>
+    <div class="save-status" id="saveStatus">端末内保存：未確認</div>
 </div>
 
 
@@ -153,26 +157,6 @@
 </div>
 
 <input type="file" id="loadFileInput" accept=".json,application/json" hidden>
-<script src="app.js?v=1.6"></script>
-
-
-
-
-<div class="modal hidden" id="fileSaveGuide">
-  <div class="modal-box action-modal">
-    <h2>OneDrive等へ保存</h2>
-    <p class="save-guide-main">iPhoneでは、次に表示される共有画面で <strong>「ファイルに保存」</strong> を選んでください。</p>
-    <ol class="save-guide-steps">
-      <li>「ファイルに保存」をタップ</li>
-      <li>保存先の「ブラウズ」から OneDrive / iCloud Drive / このiPhone内 を選択</li>
-      <li>保存するフォルダを選んで「保存」</li>
-    </ol>
-    <div class="modal-actions">
-      <button class="calc" id="openFileSaveBtn">保存画面を開く</button>
-      <button class="outline" id="cancelFileSaveBtn">キャンセル</button>
-    </div>
-  </div>
-</div>
-
+<script src="app.js?v=1.7"></script>
 </body>
 </html>
